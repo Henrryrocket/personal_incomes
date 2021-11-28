@@ -1,4 +1,5 @@
-import React,{useState} from 'react'
+import React,{useState, useEffect} from 'react';
+import Axios from 'axios';
 import './App.css';
 
 function App() {
@@ -6,6 +7,14 @@ function App() {
   const [enteredAmount, setEnteredAmount]=useState('');
   const [enteredDate, setEnteredDate]=useState('');
   const [enteredType, setEnteredType]=useState('');
+  const [list, setList] = useState([]);
+  const [editItem, setEditItem] = useState("");
+
+  useEffect(()=>{
+    Axios.get("http://localhost:3001/api/get").then((response)=>{
+    setList(response.data);
+    })
+  },[]);
 
   const conceptChangerHandler =(event)=>{
     setEnteredConcept(event.target.value);
@@ -25,22 +34,47 @@ const typeChangerHandler = (event)=>{
 }
 const submitHandler = (event)=>{
     event.preventDefault();
-    const  expenseData ={
+    const expenseData ={
         concept: enteredConcept,
         amount: enteredAmount,
         date: enteredDate,
         type: enteredType,
-    };
- 
+      };
+    
+    Axios.post("http://localhost:3001/api/insert",{       
+       concept: enteredConcept,
+       amount: enteredAmount,
+       date: enteredDate,
+       type: enteredType,}).then(()=>{
+        alert('Successful insert!')
+      }); 
+
+      setList([
+        ...list,
+        { concept: enteredConcept,
+          amount: enteredAmount,
+          date: enteredDate,
+          type: enteredType
+        },
+      ])
     setEnteredConcept('');
     setEnteredAmount('');
     setEnteredDate('');
     setEnteredType('');
  };
- const cancelHanler =(event)=>{
-     event.preventDefault();
+ const DeleteHanler =(concept)=>{
+     Axios.delete(`http://localhost:3001/api/delete/${concept}`)
     
- }
+ };
+ const UpdateHanler =(concept)=>{
+  Axios.put('http://localhost:3001/api/update',{
+          concept: enteredConcept,
+          amount: enteredAmount,
+          
+  });
+
+ 
+};
   return (
     <form onSubmit={submitHandler}>
       <div className="App">
@@ -81,12 +115,32 @@ const submitHandler = (event)=>{
                 <option value="expense">Expense</option>
               </optgroup>
             </select>  
-            <button type="submit">Add</button>
+            <button type="submit" onClick={submitHandler}>Add</button>
+                        
+            {list.map((e)=>{
+                return(
+                  <div className="card">
+                    <h2>Concepto: {e.concept}</h2>
+                    <p>Amount: {e.amount} $</p>
+
+                    <button onClick={()=>{DeleteHanler(e.concept)}}>Delete</button>
+                    <input type="text" id="updateInput" onChange={(e)=>{ setEditItem(e.target.value)}}/>
+                    <button onClick={()=>{UpdateHanler(e.concept)}}>Update</button>
+                  </div>
+
+                  );
+                })}
+
           </div>
+
+          
+
       </div>
     </form>
-
-  );
+     
+    );
 }
 
+
+  
 export default App;
